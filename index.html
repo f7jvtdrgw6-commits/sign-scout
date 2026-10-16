@@ -102,7 +102,7 @@ html,body,#map{background:#f2f2f7}
 #pauseb{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:rgba(18,50,47,.85);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);color:#ffd60a;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;box-shadow:0 4px 12px rgba(0,0,0,.35);transition:transform .12s}#pauseb:active{transform:scale(.93)}#pauseb svg{width:15px;height:15px}#pauseb span{font-size:8px;font-weight:700;text-transform:uppercase;color:#f5f5f7}#pauseb.on{color:#27B94B}
 #pzb{position:absolute;left:50%;transform:translateX(-50%);bottom:calc(var(--sb) + 88px);z-index:1000;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;color:#ffd60a}#drop.pz{opacity:.7}
 #lbtn.on{color:#fff!important;background:#0A84FF!important}
-#leg{position:absolute;left:12px;top:calc(var(--st) + 196px);z-index:1000;border-radius:14px;padding:8px 10px;font-size:11px}#leg .lt{font-weight:700;margin-bottom:5px;color:#f5f5f7}#leg .lt span{color:var(--m);font-weight:500}#leg .lb{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;color:#d8dde3}#leg .lb div{display:flex;align-items:center;gap:6px}#leg i{width:12px;height:12px;border-radius:3px;display:inline-block;opacity:.85}#leg i.na{border:1px dashed rgba(255,255,255,.5)}
+#leg{position:absolute;left:12px;top:calc(var(--st) + 196px);z-index:1000;border-radius:14px;padding:8px 10px;font-size:11px}#leg .lt{font-weight:700;margin-bottom:5px;color:#f5f5f7}#leg .lt span{color:var(--m);font-weight:500}#leg .lb{display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;color:#d8dde3}#leg .lb div{display:flex;align-items:center;gap:6px}#leg i{width:12px;height:12px;border-radius:3px;display:inline-block}#leg i.na{border:1px dashed rgba(255,255,255,.5)}
 </style></head><body>
 <div id="map"></div>
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
@@ -220,21 +220,25 @@ function viewRoute(id){viewing=id;closeLog();const r=db.routes.find(x=>x.id===id
  $('vlist').querySelectorAll('.sr').forEach(el=>el.onclick=()=>{const p=r.pins[+el.dataset.i];map.setView([p.lat,p.lng],18)});
  if(r.pins.length)map.fitBounds(r.pins.map(p=>[p.lat,p.lng]),{padding:[60,60],maxZoom:18})}
 function exitView(){viewing=null;['dropwrap','side','spd'].forEach(k=>$(k).style.display='');setMode();$('view').classList.remove('on');const p=render();if(p.length)map.fitBounds(p,{padding:[60,60],maxZoom:17})}
-const INC_URL='https://P3ePLMYs2RVChkJx.svcs.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/ACS_Median_Household_Income_View_Boundaries/FeatureServer/2/query';
-const BINS=[{max:50000,c:'#2a1f6e',l:'< $50k'},{max:75000,c:'#2f45b0',l:'$50–75k'},{max:100000,c:'#2b7fe0',l:'$75–100k'},{max:150000,c:'#1fb3e0',l:'$100–150k'},{max:1e12,c:'#5ee8f5',l:'$150k+'}];
+const BG_URL='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2024/MapServer/10/query';
+const CR_URL='https://api.censusreporter.org/1.0/data/show/latest?table_ids=B19013&geo_ids=150|05000US';
+const BINS=[{max:25000,c:'#b07cf2',l:'< $25k'},{max:50000,c:'#8f6ff2',l:'$25–50k'},{max:75000,c:'#7068f0',l:'$50–75k'},{max:100000,c:'#5478ee',l:'$75–100k'},{max:125000,c:'#3d8ff0',l:'$100–125k'},{max:150000,c:'#2aa8ee',l:'$125–150k'},{max:175000,c:'#1fc0e6',l:'$150–175k'},{max:200000,c:'#40d8ec',l:'$175–200k'},{max:1e12,c:'#a4f4fa',l:'$200k+'}];
+$('leg').querySelector('.lb').innerHTML=BINS.map(b=>'<div><i style="background:'+b.c+'"></i>'+b.l+'</div>').join('')+'<div><i class="na"></i>No data</div>';
 const incColor=v=>v==null?null:BINS.find(b=>v<b.max).c;
 map.createPane('incomePane');map.getPane('incomePane').style.zIndex=380;
-const incLayer=L.geoJSON(null,{pane:'incomePane',style:f=>{const v=f.properties.B19049_001E,c=incColor(v);return c?{color:'rgba(255,255,255,.25)',weight:.6,fillColor:c,fillOpacity:.55}:{color:'rgba(255,255,255,.35)',weight:.6,dashArray:'3 3',fillOpacity:0}},
- onEachFeature:(f,l)=>{const p=f.properties,v=p.B19049_001E,m=p.B19049_001M;l.bindPopup('<div class="pp"><b>'+esc(p.NAME)+'</b><div class="m">'+esc(p.County||'')+(p.State?', '+esc(p.State):'')+'</div><div style="font-size:18px;font-weight:800;margin-top:4px">'+(v==null?'No data':'$'+Math.round(v).toLocaleString())+'</div><div class="m">Median household income'+(m!=null&&v!=null?' · ±$'+Math.round(m).toLocaleString():'')+'</div><div class="m">ACS 5-year estimate</div></div>')}});
-const incSeen=new Set(),incCells=new Set();let incOn=localStorage.getItem('signscout_income')==='1',incT=null;
-$('leg').querySelector('.lb').innerHTML=BINS.map(b=>'<div><i style="background:'+b.c+'"></i>'+b.l+'</div>').join('')+'<div><i class="na"></i>No data</div>';
+const incLayer=L.geoJSON(null,{pane:'incomePane',style:f=>{const c=incColor(f.properties.inc);return c?{color:'rgba(10,20,30,.35)',weight:.5,fillColor:c,fillOpacity:.72}:{color:'rgba(255,255,255,.35)',weight:.6,dashArray:'3 3',fillOpacity:0}},
+ onEachFeature:(f,l)=>{const p=f.properties,v=p.inc,m=p.moe;l.bindPopup('<div class="pp"><b>'+esc(p.NAME)+'</b><div class="m">'+esc(p.cname||'')+'</div><div style="font-size:18px;font-weight:800;margin-top:4px">'+(v==null?'No data':'$'+Math.round(v).toLocaleString())+'</div><div class="m">Median household income'+(m!=null&&v!=null?' · ±$'+Math.round(m).toLocaleString():'')+'</div><div class="m">'+esc(incRel)+'</div></div>')}});
+const incSeen=new Set(),incCells=new Set(),incCounty={};let incOn=localStorage.getItem('signscout_income')==='1',incT=null,incRel='ACS 5-year estimate';
+function countyData(fips){return incCounty[fips]||(incCounty[fips]=fetch(CR_URL+fips).then(r=>r.json()).then(j=>{if(j.release)incRel=j.release.name+' estimate';const o={};for(const k in j.data){const t=j.data[k].B19013;o[k.slice(7)]={v:t.estimate.B19013001,m:t.error.B19013001}}o._name=(j.geography['05000US'+fips]||{}).name||'';return o}).catch(e=>{delete incCounty[fips];throw e}))}
 function incStatus(t){$('lst').textContent=t||''}
-async function loadIncome(){if(!incOn)return;if(map.getZoom()<10){incStatus('· zoom in');return}incStatus('');const b=map.getBounds(),G=.1;const todo=[];
+async function loadIncome(){if(!incOn)return;if(map.getZoom()<11){incStatus('· zoom in');return}incStatus('');const b=map.getBounds(),G=.04;const todo=[];
  for(let x=Math.floor(b.getWest()/G);x<=Math.floor(b.getEast()/G);x++)for(let y=Math.floor(b.getSouth()/G);y<=Math.floor(b.getNorth()/G);y++){const k=x+','+y;if(!incCells.has(k))todo.push([k,x*G,y*G])}
- if(todo.length>40)todo.length=40;if(!todo.length)return;incStatus('· loading…');
- await Promise.all(todo.map(async([k,x,y])=>{incCells.add(k);try{const q=new URLSearchParams({geometry:[x,y,x+G,y+G].map(n=>n.toFixed(4)).join(','),geometryType:'esriGeometryEnvelope',inSR:4326,spatialRel:'esriSpatialRelIntersects',outFields:'GEOID,NAME,County,State,B19049_001E,B19049_001M',returnGeometry:true,outSR:4326,geometryPrecision:5,maxAllowableOffset:.0002,f:'geojson'});
-  const r=await fetch(INC_URL+'?'+q);const j=await r.json();if(!j.features)throw 0;j.features.forEach(f=>{const id=f.properties.GEOID;if(incSeen.has(id))return;incSeen.add(id);incLayer.addData(f)})}catch(e){incCells.delete(k);incStatus('· load failed')}}));
- if($('lst').textContent==='· loading…')incStatus('')}
+ if(todo.length>36)todo.length=36;if(!todo.length)return;incStatus('· loading…');let fail=false;
+ await Promise.all(todo.map(async([k,x,y])=>{incCells.add(k);try{const q=new URLSearchParams({geometry:[x,y,x+G,y+G].map(n=>n.toFixed(4)).join(','),geometryType:'esriGeometryEnvelope',inSR:4326,spatialRel:'esriSpatialRelIntersects',outFields:'GEOID,STATE,COUNTY,TRACT,NAME',returnGeometry:true,outSR:4326,geometryPrecision:5,maxAllowableOffset:.00008,f:'geojson'});
+  const r=await fetch(BG_URL+'?'+q);const j=await r.json();if(!j.features)throw 0;const fs=j.features.filter(f=>!incSeen.has(f.properties.GEOID));
+  const cs=[...new Set(fs.map(f=>f.properties.STATE+f.properties.COUNTY))];const data={};await Promise.all(cs.map(async c=>{data[c]=await countyData(c)}));
+  fs.forEach(f=>{const p=f.properties;if(incSeen.has(p.GEOID))return;incSeen.add(p.GEOID);const d=data[p.STATE+p.COUNTY],e=d[p.GEOID];p.inc=e&&e.v!=null&&e.v>0?e.v:null;p.moe=e?e.m:null;p.cname=d._name;p.NAME=(p.NAME||'Block Group')+', Tract '+(+p.TRACT/100);incLayer.addData(f)})}catch(e){incCells.delete(k);fail=true}}));
+ incStatus(fail?'· some areas failed':'')}
 function setIncome(on){incOn=on;localStorage.setItem('signscout_income',on?'1':'0');$('lbtn').classList.toggle('on',on);$('leg').style.display=on?'':'none';if(on){incLayer.addTo(map);loadIncome()}else map.removeLayer(incLayer)}
 function toggleIncome(){setIncome(!incOn);toast(incOn?'Income layer on':'Income layer off')}
 map.on('moveend',()=>{clearTimeout(incT);incT=setTimeout(loadIncome,400)});
