@@ -222,11 +222,14 @@ function viewRoute(id){viewing=id;closeLog();const r=db.routes.find(x=>x.id===id
 function exitView(){viewing=null;['dropwrap','side','spd'].forEach(k=>$(k).style.display='');setMode();$('view').classList.remove('on');const p=render();if(p.length)map.fitBounds(p,{padding:[60,60],maxZoom:17})}
 const BG_URL='https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_ACS2024/MapServer/10/query';
 const CR_URL='https://api.censusreporter.org/1.0/data/show/latest?table_ids=B19013&geo_ids=150|05000US';
-const BINS=[{max:25000,c:'#b07cf2',l:'< $25k'},{max:50000,c:'#8f6ff2',l:'$25–50k'},{max:75000,c:'#7068f0',l:'$50–75k'},{max:100000,c:'#5478ee',l:'$75–100k'},{max:125000,c:'#3d8ff0',l:'$100–125k'},{max:150000,c:'#2aa8ee',l:'$125–150k'},{max:175000,c:'#1fc0e6',l:'$150–175k'},{max:200000,c:'#40d8ec',l:'$175–200k'},{max:1e12,c:'#a4f4fa',l:'$200k+'}];
+const INCOME_PALETTE='B'; // 'A' = muted red→yellow→sage, 'B' = muted slate→sky→aqua
+const PALETTES={A:['#c4645a','#cd7e5f','#d59868','#dbb277','#d9c78a','#bfc48e','#a3b68e','#8aa68f','#76968f'],B:['#4f5d78','#5a6e8c','#6681a0','#7394b2','#82a7c2','#93b9cf','#a6cad9','#bad9e2','#d0e8ec']};
+const PAL=PALETTES[new URLSearchParams(location.search).get('pal')||INCOME_PALETTE]||PALETTES.A;
+const BINS=[25000,50000,75000,100000,125000,150000,175000,200000,1e12].map((max,i)=>({max,c:PAL[i],l:['< $25k','$25–50k','$50–75k','$75–100k','$100–125k','$125–150k','$150–175k','$175–200k','$200k+'][i]}));
 $('leg').querySelector('.lb').innerHTML=BINS.map(b=>'<div><i style="background:'+b.c+'"></i>'+b.l+'</div>').join('')+'<div><i class="na"></i>No data</div>';
 const incColor=v=>v==null?null:BINS.find(b=>v<b.max).c;
 map.createPane('incomePane');map.getPane('incomePane').style.zIndex=380;
-const incLayer=L.geoJSON(null,{pane:'incomePane',style:f=>{const c=incColor(f.properties.inc);return c?{color:'rgba(10,20,30,.35)',weight:.5,fillColor:c,fillOpacity:.72}:{color:'rgba(255,255,255,.35)',weight:.6,dashArray:'3 3',fillOpacity:0}},
+const incLayer=L.geoJSON(null,{pane:'incomePane',style:f=>{const c=incColor(f.properties.inc);return c?{color:'rgba(255,255,255,.22)',weight:.4,fillColor:c,fillOpacity:.6}:{color:'rgba(255,255,255,.35)',weight:.6,dashArray:'3 3',fillOpacity:0}},
  onEachFeature:(f,l)=>{const p=f.properties,v=p.inc,m=p.moe;l.bindPopup('<div class="pp"><b>'+esc(p.NAME)+'</b><div class="m">'+esc(p.cname||'')+'</div><div style="font-size:18px;font-weight:800;margin-top:4px">'+(v==null?'No data':'$'+Math.round(v).toLocaleString())+'</div><div class="m">Median household income'+(m!=null&&v!=null?' · ±$'+Math.round(m).toLocaleString():'')+'</div><div class="m">'+esc(incRel)+'</div></div>')}});
 const incSeen=new Set(),incCells=new Set(),incCounty={};let incOn=localStorage.getItem('signscout_income')==='1',incT=null,incRel='ACS 5-year estimate';
 function countyData(fips){return incCounty[fips]||(incCounty[fips]=fetch(CR_URL+fips).then(r=>r.json()).then(j=>{if(j.release)incRel=j.release.name+' estimate';const o={};for(const k in j.data){const t=j.data[k].B19013;o[k.slice(7)]={v:t.estimate.B19013001,m:t.error.B19013001}}o._name=(j.geography['05000US'+fips]||{}).name||'';return o}).catch(e=>{delete incCounty[fips];throw e}))}
