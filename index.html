@@ -123,10 +123,11 @@ body{position:static;width:100%;height:100%;padding:0!important;overflow:hidden;
 #map{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:auto!important;width:100vw;height:var(--app-h,100vh)!important;min-height:calc(100% + env(safe-area-inset-top) + env(safe-area-inset-bottom))}
 .leaflet-bottom{bottom:max(2px,calc(var(--sb) - 20px))}.leaflet-control-attribution{font-size:8px!important;padding:0 4px!important;line-height:13px}.leaflet-control-attribution{border-radius:6px 0 0 6px;opacity:.75}
 #sheet:not(.on){transform:translateY(calc(100% + 120px))!important;visibility:hidden;pointer-events:none}
-#cinfo{transition:opacity .4s}#cinfo.hide{opacity:0;pointer-events:none}
+#cinfo{transition:opacity .4s;will-change:opacity}#cinfo.hide{opacity:0;pointer-events:none}
 #pauseb,#stopb{width:52px!important;height:52px!important;border-radius:50%!important;gap:0!important;padding:0!important}#pauseb svg,#stopb svg{width:22px!important;height:22px!important}#pauseb{color:#f5f5f7!important}#pauseb.on{color:#f5f5f7!important}#stopb{color:#ff453a!important}#pauseb span,#stopb span{display:none!important}
 #modal,#fm,#pwm,#rsm,#scrim{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:auto!important;height:var(--app-h,100vh)!important;min-height:calc(100% + env(safe-area-inset-top) + env(safe-area-inset-bottom))}
 #sheet{position:fixed!important;bottom:calc(0px - var(--map-overhang,0px))!important;padding-bottom:var(--sb)!important}
+#dropwrap,#side,#spd,#pzb,#cinfo,#legp,#leg{transition:none}#dropwrap,#side,#spd,#pzb,#cinfo{position:fixed!important}
 </style></head><body>
 <div id="map"></div>
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
@@ -329,17 +330,15 @@ async function setCust(on,interactive){custOn=on;localStorage.setItem('signscout
  if(on){custLayer.addTo(map);renderCust();const ok=await loadCustomers(interactive);if(!ok&&!custMem&&interactive){custOn=false;localStorage.setItem('signscout_cust_on','0');$('cbtn').classList.remove('on');map.removeLayer(custLayer)}updCustInfo()}else map.removeLayer(custLayer)}
 async function toggleCust(){await setCust(!custOn,true);if(custMem)toast(custOn?'Customers on':'Customers off')}
 localStorage.removeItem('signscout_customers');setCust(custOn,false);
-const isSA=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;let appHv=0,appOv=-1;window.__varWrites=0;
-function isLand(){return(screen.orientation&&/landscape/.test(screen.orientation.type))||Math.abs(window.orientation||0)===90}
-function appH(){const ih=window.innerHeight||0;if(isSA&&screen&&screen.height){const sh=isLand()?Math.min(screen.width,screen.height):Math.max(screen.width,screen.height);return Math.max(sh,ih)}return ih}
-function setAppH(){const h=appH(),ov=Math.max(0,h-(window.innerHeight||h)),r=document.documentElement;let ch=false;
- if(Math.abs(h-appHv)>=2){appHv=h;r.style.setProperty('--app-h',h+'px');ch=true;window.__varWrites++}
- if(Math.abs(ov-appOv)>=2){appOv=ov;r.style.setProperty('--map-overhang',ov+'px');ch=true;window.__varWrites++}return ch}
-setAppH();
-function fixSize(){if(setAppH()){map.invalidateSize({pan:false});if(base&&base.getMaplibreMap){try{base.getMaplibreMap().resize()}catch(e){}}}}
-let fsT=null;const fsDeb=d=>{clearTimeout(fsT);fsT=setTimeout(fixSize,d)};
-addEventListener('resize',()=>fsDeb(250));addEventListener('orientationchange',()=>{appHv=0;appOv=-1;fsDeb(350)});addEventListener('pageshow',()=>fsDeb(100));
-addEventListener('load',()=>{fixSize();map.invalidateSize({pan:false})});
+// One-time frozen measurement (no resize listeners): iOS standalone innerHeight is unstable, so never re-derive from it.
+const isSA=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;window.__varWrites=0;let frozenOv=-1;
+function screenH(){const land=(screen.orientation&&/landscape/.test(screen.orientation.type))||Math.abs(window.orientation||0)===90;return land?Math.min(screen.width,screen.height):Math.max(screen.width,screen.height)}
+function freezeLayout(force){const ih=window.innerHeight||0;const sh=isSA?screenH():ih;const ov=Math.min(120,Math.max(0,sh-ih));
+ if(!force&&frozenOv>=0&&ov<=frozenOv)return;frozenOv=ov;const r=document.documentElement;r.style.setProperty('--app-h',Math.max(sh,ih)+'px');r.style.setProperty('--map-overhang',ov+'px');window.__varWrites++;
+ map.invalidateSize({pan:false});if(base&&base.getMaplibreMap){try{base.getMaplibreMap().resize()}catch(e){}}}
+freezeLayout(true);setTimeout(()=>freezeLayout(false),600);
+function mapResizeOnly(){map.invalidateSize({pan:false});if(base&&base.getMaplibreMap){try{base.getMaplibreMap().resize()}catch(e){}}}
+addEventListener('orientationchange',()=>setTimeout(()=>freezeLayout(true),500),{passive:true});addEventListener('pageshow',()=>setTimeout(mapResizeOnly,100));
 drawLegend();setIncome(incOn);
 const pts=render();setMode();if(pts.length)map.fitBounds(pts,{padding:[60,60],maxZoom:17});
 let follow=false,heading=null,compass=null,prevFix=null,anim=null,shown=null,accC=null,progPan=false;
