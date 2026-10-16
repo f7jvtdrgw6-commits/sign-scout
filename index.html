@@ -132,6 +132,22 @@ body{position:static;width:100%;height:100%;padding:0!important;overflow:hidden;
 #modal .card,#fm .card,#pwm .card,#rsm .card{margin-bottom:120px}
 #pzdim{position:fixed;top:0;left:0;right:0;bottom:-120px;min-height:calc(100% + 120px);background:rgba(0,0,0,.55);-webkit-backdrop-filter:saturate(.6);backdrop-filter:saturate(.6);pointer-events:none;z-index:990;opacity:0;transition:opacity .3s}body.paused #pzdim{opacity:1}
 body.paused #pauseb,body.paused #stopb{opacity:1!important;filter:none!important;position:relative;z-index:1001;background:#1d4a45!important;border-color:rgba(255,255,255,.28)!important}
+.sgp{position:relative;width:34px;height:34px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.55))}
+.sgp .pn{position:absolute;left:2px;top:0;width:30px;height:20px;border-radius:5px;background:#27B94B;border:1.5px solid #fff;color:#fff;font:800 12px/17px -apple-system,system-ui,sans-serif;text-align:center;letter-spacing:-.02em}
+.sgp .po{position:absolute;left:16px;top:19px;width:2px;height:13px;background:#fff;border-radius:1px}
+.sgp .tp{position:absolute;left:14px;top:30px;width:6px;height:4px;border-radius:50%;background:rgba(0,0,0,.45)}
+.sgp.k .pn{background:#8e8e93;border-color:#d1d1d6}.sgp.k .po{background:#d1d1d6}.sgp.k{opacity:.9}
+.sgp.r .pn{background:#ef4444}
+.sgp .fb{position:absolute;right:-5px;top:-6px;width:14px;height:14px;border-radius:50%;background:#ef4444;border:1.5px solid #fff;color:#fff;font:900 9px/11px system-ui;text-align:center;font-style:normal}
+.sgp .ck{position:absolute;right:-5px;top:-6px;width:14px;height:14px;border-radius:50%;background:#fff;color:#27B94B;font:900 9px/14px system-ui;text-align:center;font-style:normal}
+.sgp.up .pn,.sgp.up .po{opacity:.55}
+.sgp.new{animation:pd .55s cubic-bezier(.3,1.6,.5,1);transform-origin:50% 100%}
+.sgp{transform-origin:50% 100%;transition:scale .2s}
+.sgp.b .pn{background:#0A84FF}
+.sgp .ck{transform:none!important;display:block!important;box-shadow:0 1px 3px rgba(0,0,0,.4);border:1.5px solid #27B94B;box-sizing:border-box;line-height:11px}
+.sgp.new{animation:sgpd .55s cubic-bezier(.3,1.6,.5,1)}
+@keyframes sgpd{0%{transform:translateY(-60px);opacity:0}100%{transform:none;opacity:1}}
+.zs1 .sgp{scale:.8}.zs2 .sgp{scale:.65}
 </style></head><body>
 <div id="pzdim" aria-hidden="true"></div><div id="map"></div>
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
@@ -166,7 +182,7 @@ function AD(r){const T=RT(r);return Math.max(0,((T.en||Date.now())-T.st)-pausedM
 function hm(ms){const m=Math.max(0,Math.floor(ms/60000));return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m'}
 (function migrate(){const c=cur();db.routes.forEach(r=>{if(r.id!==db.current&&!r.status)r.status='stopped'});
  if(c){if(c.status==='stopped'){db.current=null}else if(c.pins.length){c.status='active';c.start=c.start||c.pins[0].t||c.id}else{db.routes=db.routes.filter(r=>r!==c);db.current=null}}else db.current=null;save()})();
-const map=L.map('map',{zoomControl:false,doubleClickZoom:false}).setView([39.8,-98.6],4);
+const map=L.map('map',{zoomControl:false,doubleClickZoom:false}).setView([39.8,-98.6],4);function zsc(){const z=map.getZoom(),c=map.getContainer().classList;c.toggle('zs1',z<=13&&z>12);c.toggle('zs2',z<=12)}map.on('zoomend',zsc);zsc();
 const darkQ=matchMedia('(prefers-color-scheme: dark)');const ATT='<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';let base=null;
 const NIGHT={background:'#225253',water:'#1f3fa8',waterway:'#1f3fa8',landcover_ice_shelf:'#2a5f5c',landcover_glacier:'#2a5f5c',landuse_residential:'#3a4659',landcover_wood:'#1e4b4c',landuse_park:'#2a5d55',building:'#55687a','aeroway-area':'#3a4659','aeroway-taxiway':'#8a909c','aeroway-runway':'#8a909c','aeroway-runway-casing':'#2a3340',road_area_pier:'#3a4659',road_pier:'#8a909c',highway_path:'#46505f',highway_minor:'#8a909c',highway_major_casing:'#26303c',highway_major_inner:'#9aa0ab',highway_major_subtle:'#8a909c',highway_motorway_casing:'#26303c',highway_motorway_inner:'#a8a7a4',highway_motorway_subtle:'#a39f98',railway_transit:'#4a5568',railway_minor:'#4a5568',railway:'#4f5a6c',railway_transit_dashline:'#3a4659',railway_minor_dashline:'#3a4659',railway_dashline:'#3a4659',boundary_state:'#6b8a8a','boundary_country_z0-4':'#7a9a9a','boundary_country_z5-':'#7a9a9a'};
 function night(st){st.layers.forEach(l=>{const p=l.paint=l.paint||{};const c=NIGHT[l.id];
@@ -196,7 +212,7 @@ async function removeSign(rid,i){map.closePopup();const r=db.routes.find(x=>x.id
  toast('Sign #'+(i+1)+' removed','Undo',()=>{const r2=db.routes.find(x=>x.id===rid);if(!r2)return;r2.pins.splice(Math.min(i,r2.pins.length),0,p);save();refresh();toast('Sign #'+(i+1)+' restored')},5000)}
 function togglePick(rid,i){const r=db.routes.find(x=>x.id===rid),p=r.pins[i];if(p.pickedUp)delete p.pickedUp;else p.pickedUp=Date.now();save();map.closePopup();refresh();toast(p.pickedUp?'✓ Sign #'+(i+1)+' picked up':'Sign #'+(i+1)+' unmarked');if(navigator.vibrate)navigator.vibrate(30)}
 function esc(s){return String(s||'').replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';')}
-function pin(p,n,cls,rn,isNew,rid){if(p.flag)cls='r';return L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div class="pin '+cls+(isNew?' new':'')+'"><i>'+(p.flag?'⚠'+n:n)+'</i>'+(p.pickedUp?'<em class="ck">✓</em>':'')+'</div>',iconSize:[30,30],iconAnchor:[15,34],popupAnchor:[0,-32]}),zIndexOffset:cls=='k'?0:1000}).bindPopup(popup(p,n,rn,rid))}
+function pin(p,n,cls,rn,isNew,rid){if(p.flag)cls='r';return L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',html:'<div class="sgp '+cls+(p.pickedUp?' up':'')+(isNew?' new':'')+'"><div class="pn">'+n+'</div><div class="po"></div><div class="tp"></div>'+(p.flag?'<em class="fb">!</em>':'')+(p.pickedUp?'<em class="ck">✓</em>':'')+'</div>',iconSize:[34,34],iconAnchor:[17,34],popupAnchor:[0,-34]}),zIndexOffset:cls=='k'?0:1000}).bindPopup(popup(p,n,rn,rid))}
 function copyTxt(t){(navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Coordinates copied'),()=>{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();toast('Coordinates copied')})}
 function render(animLast){layer.clearLayers();const pts=[];
  db.routes.forEach(r=>{if(r.id===db.current)return;r.pins.forEach((p,i)=>{pin(p,i+1,'k',r.name,false,r.id).addTo(layer);pts.push([p.lat,p.lng])})});
