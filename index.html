@@ -130,7 +130,8 @@ body{position:static;width:100%;height:100%;padding:0!important;overflow:hidden;
 @media (display-mode: standalone){#dropwrap{bottom:calc(var(--sb) - 42px)!important}#side,#spd,#cinfo{bottom:calc(var(--sb) + 24px)!important}#pzb{bottom:calc(var(--sb) + 28px)!important}}
 #modal,#fm,#pwm,#rsm,#scrim{height:calc(var(--app-h,100vh) + 120px)!important;min-height:calc(100% + 120px)!important;bottom:auto!important}
 #modal .card,#fm .card,#pwm .card,#rsm .card{margin-bottom:120px}
-#pzdim{position:fixed;top:0;left:0;right:0;bottom:-120px;min-height:calc(100% + 120px);background:rgba(0,0,0,.35);-webkit-backdrop-filter:saturate(.6);backdrop-filter:saturate(.6);pointer-events:none;z-index:990;opacity:0;transition:opacity .3s}body.paused #pzdim{opacity:1}
+#pzdim{position:fixed;top:0;left:0;right:0;bottom:-120px;min-height:calc(100% + 120px);background:rgba(0,0,0,.55);-webkit-backdrop-filter:saturate(.6);backdrop-filter:saturate(.6);pointer-events:none;z-index:990;opacity:0;transition:opacity .3s}body.paused #pzdim{opacity:1}
+body.paused #pauseb,body.paused #stopb{opacity:1!important;filter:none!important;position:relative;z-index:1001;background:#1d4a45!important;border-color:rgba(255,255,255,.28)!important}
 </style></head><body>
 <div id="pzdim" aria-hidden="true"></div><div id="map"></div>
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
