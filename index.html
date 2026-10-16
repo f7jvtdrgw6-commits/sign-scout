@@ -118,6 +118,11 @@ html,body,#map{background:#f2f2f7}
 #cinfo{bottom:calc(var(--sb) + 84px)!important;right:66px!important}
 #sheet:not(.on){transform:translateY(calc(100% + 60px))!important;visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.25,1),visibility 0s .38s}
 @media (max-height:700px){#side .ib{width:42px!important;height:42px!important}#side{gap:6px!important}}
+html{height:100%;height:-webkit-fill-available;background:#225253}
+body{position:fixed;inset:0;width:100%;height:100%;min-height:100vh;min-height:100dvh;min-height:-webkit-fill-available;background:#225253}
+#map{position:fixed!important;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;min-height:-webkit-fill-available}
+#sheet:not(.on){transform:translateY(calc(100% + 120px))!important;visibility:hidden;pointer-events:none}
+#cinfo{transition:opacity .4s}#cinfo.hide{opacity:0;pointer-events:none}
 </style></head><body>
 <div id="map"></div>
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
@@ -285,7 +290,7 @@ async function loadCustomers(interactive){const enc=await fetchEnc();if(!enc){if
  let pass=localStorage.getItem(PKEY),err='';for(let tries=0;tries<5;tries++){if(!pass){if(!interactive)return false;pass=await askPass(err);if(!pass)return false}
   try{if(interactive&&!localStorage.getItem(PKEY))toast('Unlocking…');const d=await decryptCust(enc,pass);localStorage.setItem(PKEY,pass);custMem=d;custUpd=enc.updated;renderCust();updCustInfo();return true}catch(e){localStorage.removeItem(PKEY);pass=null;err='Wrong passcode, try again'}}
  return false}
-function updCustInfo(){const n=custLayer.getLayers().length;$('cinfo').textContent=custOn&&custMem?n+' customers · updated '+new Date(custUpd).toLocaleDateString([],{month:'short',day:'numeric'})+' '+new Date(custUpd).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';$('cinfo').style.display=$('cinfo').textContent?'':'none'}
+let cinfoT=null;function updCustInfo(){clearTimeout(cinfoT);$('cinfo').classList.remove('hide');cinfoT=setTimeout(()=>$('cinfo').classList.add('hide'),3000);const n=custLayer.getLayers().length;$('cinfo').textContent=custOn&&custMem?n+' customers · updated '+new Date(custUpd).toLocaleDateString([],{month:'short',day:'numeric'})+' '+new Date(custUpd).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';$('cinfo').style.display=$('cinfo').textContent?'':'none'}
 function parseCSV(t){const rows=[];let r=[],f='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];if(q){if(ch=='"'){if(t[i+1]=='"'){f+='"';i++}else q=false}else f+=ch}else if(ch=='"')q=true;else if(ch==','){r.push(f);f=''}else if(ch=='\n'||ch=='\r'){if(ch=='\r'&&t[i+1]=='\n')i++;r.push(f);rows.push(r);r=[];f=''}else f+=ch}if(f||r.length){r.push(f);rows.push(r)}
  const h=rows.shift().map(x=>x.trim());return rows.filter(x=>x.length>1).map(x=>Object.fromEntries(h.map((k,i)=>[k,x[i]])))}
 function normItems(arr){return arr.map(o=>({clients:Array.isArray(o.clients)?o.clients:(o.client?String(o.client).split(/\s*;\s*/):[]),address:o.address||'',lat:o.lat===''||o.lat==null?null:+o.lat,lng:o.lng===''||o.lng==null?null:+o.lng,job_count:o.job_count!=null&&o.job_count!==''?+o.job_count:null,job_numbers:o.job_numbers||'',statuses:o.statuses||'',match_quality:o.match_quality||''}))}
@@ -301,6 +306,9 @@ async function setCust(on,interactive){custOn=on;localStorage.setItem('signscout
  if(on){custLayer.addTo(map);renderCust();const ok=await loadCustomers(interactive);if(!ok&&!custMem&&interactive){custOn=false;localStorage.setItem('signscout_cust_on','0');$('cbtn').classList.remove('on');map.removeLayer(custLayer)}updCustInfo()}else map.removeLayer(custLayer)}
 async function toggleCust(){await setCust(!custOn,true);if(custMem)toast(custOn?'Customers on':'Customers off')}
 localStorage.removeItem('signscout_customers');setCust(custOn,false);
+function fixSize(){map.invalidateSize({pan:false});if(base&&base.getMaplibreMap){try{base.getMaplibreMap().resize()}catch(e){}}}
+['resize','orientationchange','pageshow'].forEach(e=>addEventListener(e,()=>setTimeout(fixSize,60)));if(window.visualViewport)visualViewport.addEventListener('resize',()=>setTimeout(fixSize,60));
+addEventListener('load',()=>{fixSize();setTimeout(fixSize,400);setTimeout(fixSize,1500)});
 drawLegend();setIncome(incOn);
 const pts=render();setMode();if(pts.length)map.fitBounds(pts,{padding:[60,60],maxZoom:17});
 let follow=false,heading=null,compass=null,prevFix=null,anim=null,shown=null,accC=null,progPan=false;
