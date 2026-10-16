@@ -118,9 +118,10 @@ html,body,#map{background:#f2f2f7}
 #cinfo{bottom:calc(var(--sb) + 84px)!important;right:66px!important}
 #sheet:not(.on){transform:translateY(calc(100% + 60px))!important;visibility:hidden;transition:transform .38s cubic-bezier(.2,.9,.25,1),visibility 0s .38s}
 @media (max-height:700px){#side .ib{width:42px!important;height:42px!important}#side{gap:6px!important}}
-html{height:100%;height:-webkit-fill-available;background:#225253}
-body{position:fixed;inset:0;width:100%;height:100%;min-height:100vh;min-height:100dvh;min-height:-webkit-fill-available;background:#225253}
-#map{position:fixed!important;top:0;left:0;right:0;bottom:0;width:100vw;height:100vh;height:100dvh;min-height:-webkit-fill-available}
+html{height:100%;overflow:hidden;background:#225253}
+body{position:static;width:100%;height:100%;padding:0!important;overflow:hidden;background:#225253}
+#map{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:auto!important;width:100vw;height:var(--app-h,100vh)!important;min-height:calc(100% + env(safe-area-inset-top) + env(safe-area-inset-bottom))}
+.leaflet-bottom{bottom:max(2px,calc(var(--map-overhang,0px) + env(safe-area-inset-bottom) - 14px))}.leaflet-control-attribution{border-radius:6px 0 0 6px;opacity:.75}
 #sheet:not(.on){transform:translateY(calc(100% + 120px))!important;visibility:hidden;pointer-events:none}
 #cinfo{transition:opacity .4s}#cinfo.hide{opacity:0;pointer-events:none}
 #pauseb,#stopb{width:52px!important;height:52px!important;border-radius:50%!important;gap:0!important;padding:0!important}#pauseb svg,#stopb svg{width:22px!important;height:22px!important}#pauseb{color:#f5f5f7!important}#pauseb.on{color:#f5f5f7!important}#stopb{color:#ff453a!important}#pauseb span,#stopb span{display:none!important}
@@ -326,7 +327,11 @@ async function setCust(on,interactive){custOn=on;localStorage.setItem('signscout
  if(on){custLayer.addTo(map);renderCust();const ok=await loadCustomers(interactive);if(!ok&&!custMem&&interactive){custOn=false;localStorage.setItem('signscout_cust_on','0');$('cbtn').classList.remove('on');map.removeLayer(custLayer)}updCustInfo()}else map.removeLayer(custLayer)}
 async function toggleCust(){await setCust(!custOn,true);if(custMem)toast(custOn?'Customers on':'Customers off')}
 localStorage.removeItem('signscout_customers');setCust(custOn,false);
-function fixSize(){map.invalidateSize({pan:false});if(base&&base.getMaplibreMap){try{base.getMaplibreMap().resize()}catch(e){}}}
+function appH(){const sa=matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;let h=Math.max(window.innerHeight||0,document.documentElement.clientHeight||0);
+ if(sa&&screen&&screen.height){const land=(screen.orientation&&/landscape/.test(screen.orientation.type))||Math.abs(window.orientation||0)===90;const sh=land?Math.min(screen.width,screen.height):Math.max(screen.width,screen.height);h=Math.max(h,sh)}return h}
+function setAppH(){const h=appH(),r=document.documentElement;r.style.setProperty('--app-h',h+'px');r.style.setProperty('--map-overhang',Math.max(0,h-(window.innerHeight||h))+'px')}
+setAppH();
+function fixSize(){setAppH();map.invalidateSize({pan:false});if(base&&base.getMaplibreMap){try{base.getMaplibreMap().resize()}catch(e){}}}
 ['resize','orientationchange','pageshow'].forEach(e=>addEventListener(e,()=>setTimeout(fixSize,60)));if(window.visualViewport)visualViewport.addEventListener('resize',()=>setTimeout(fixSize,60));
 addEventListener('load',()=>{fixSize();setTimeout(fixSize,400);setTimeout(fixSize,1500)});
 drawLegend();setIncome(incOn);
