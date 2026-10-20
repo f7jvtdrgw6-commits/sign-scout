@@ -6,7 +6,7 @@
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=2"><link rel="icon" href="icon-192.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"><script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script><script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"><script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script><script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script><script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
 <style>
 :root{--g:#27B94B;--g2:#27B94B;--b:#0A84FF;--glass:rgba(18,50,47,.8);--line:rgba(255,255,255,.1);--t:#f5f5f7;--m:#98989f;--st:env(safe-area-inset-top);--sb:env(safe-area-inset-bottom)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -150,13 +150,16 @@ body.paused #pauseb,body.paused #stopb{opacity:1!important;filter:none!important
 .zs1 .sgp{scale:.8}.zs2 .sgp{scale:.65}
 #pzb{display:flex;align-items:center;gap:6px;color:#f5f5f7!important;font-family:inherit;font-weight:600;font-size:13px}#pzb[style*="none"]{display:none!important}#pzb svg{width:13px;height:13px;flex:none}
 #toast .ti{display:inline-flex;vertical-align:-3px;margin-right:7px}#toast .ti svg{width:16px;height:16px}#toast .ti svg[fill=currentColor]{color:#fff}
+#laym{position:absolute;right:58px;top:0;z-index:1001;display:none;flex-direction:column;gap:6px;padding:8px;border-radius:16px;width:188px;background:rgba(18,50,47,.92)!important}#laym.on{display:flex}
+#laym .lseg{display:flex;gap:4px;background:rgba(255,255,255,.07);border-radius:11px;padding:3px}#laym .lseg button{flex:1;border:0;background:none;color:var(--t);font:inherit;font-size:13px;font-weight:600;padding:8px 4px;border-radius:9px}#laym .lseg button.on{background:#27B94B;color:#fff}
+#laym .lrow{border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--t);font:inherit;font-size:13px;font-weight:600;padding:9px;border-radius:11px;text-align:left}#laym .lrow.on{border-color:#27B94B;color:#fff;background:rgba(39,185,75,.25)}
 </style></head><body>
 <div id="pzdim" aria-hidden="true"></div><div id="map"></div>
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
 <div class="row" style="gap:8px"><button class="ib" onclick="openLog()" aria-label="Route log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
 <button class="ib" onclick="undo()" aria-label="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button></div></div>
 <div class="chips"><div class="chip g"><b id="sNow">0</b><span>This route</span></div><div class="chip"><b id="sPast">0</b><span>Past signs</span></div><div class="chip"><b id="sDur">0m</b><span>Duration</span></div></div></div>
-<div id="spd" class="glass"><b>--</b><span>mph</span></div><div id="side"><button id="lbtn" class="ib glass" onclick="toggleIncome()" aria-label="Income layer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5" opacity=".6"/></svg></button><button id="cbtn" class="ib glass" onclick="toggleCust()" aria-label="Customers layer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.6" r="4.1"/><path d="M3.8 20.2c0-4.2 3.7-7.1 8.2-7.1s8.2 2.9 8.2 7.1c0 .6-.4 1-1 1H4.8c-.6 0-1-.4-1-1z"/></svg></button><button id="fbtn" class="ib glass" onclick="recenter()" aria-label="Follow me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+<div id="spd" class="glass"><b>--</b><span>mph</span></div><div id="side"><div id="laym" class="glass"><div class="lseg"><button id="bStd" onclick="setBaseMode('std')">Map</button><button id="bSat" onclick="setBaseMode('sat')">Satellite</button></div><button id="bInc" class="lrow" onclick="toggleIncome();updLay();closeLay()">Income layer</button></div><button id="lbtn" class="ib glass" onclick="openLay()" aria-label="Income layer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5" opacity=".6"/></svg></button><button id="cbtn" class="ib glass" onclick="toggleCust()" aria-label="Customers layer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.6" r="4.1"/><path d="M3.8 20.2c0-4.2 3.7-7.1 8.2-7.1s8.2 2.9 8.2 7.1c0 .6-.4 1-1 1H4.8c-.6 0-1-.4-1-1z"/></svg></button><button id="fbtn" class="ib glass" onclick="recenter()" aria-label="Follow me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
 </div>
 <div id="dropwrap"><button id="startb" onclick="startFlow()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>Start Route</button><button id="pauseb" onclick="togglePause()" aria-label="Pause route"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="3.8" height="14" rx="1.4"/><rect x="13.7" y="5" width="3.8" height="14" rx="1.4"/></svg></button><button id="drop" onclick="drop()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0119 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Drop Sign</button><button id="stopb" onclick="stopRoute()" aria-label="Stop route"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4.7" y="4.7" width="14.6" height="14.6" rx="3.6"/></svg></button></div>
 <div id="view" class="glass"><div class="row"><div><b id="vtitle"></b><div style="color:var(--m);font-size:12px" id="vsub"></div></div><button class="back" onclick="exitView()">Back to Live</button></div><div id="vroute"></div><div id="vlist"></div></div>
@@ -191,9 +194,35 @@ function night(st){st.layers.forEach(l=>{const p=l.paint=l.paint||{};const c=NIG
  if(c){if(l.type=='fill'){p['fill-color']=c;if(l.id=='building'){p['fill-outline-color']='#46586a';p['fill-opacity']=.9}}else if(l.type=='line')p['line-color']=c;else if(l.type=='background')p['background-color']=c}
  if(l.type=='symbol'&&l.layout&&l.layout['text-field']){const big=/motorway|city|state|country/.test(l.id);p['text-color']=l.id=='water_name'?'#9fb4ff':big?'#ffffff':'#e4e7ec';p['text-halo-color']='rgba(15,30,35,.9)';if(/highway_name/.test(l.id)){l.layout['text-transform']='uppercase';l.layout['text-letter-spacing']=.08};p['text-halo-width']=1.2}});return st}
 function osmFallback(){base=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,className:'dk',attribution:'&copy; OpenStreetMap'}).addTo(map)}
-function setBase(){if(base)map.removeLayer(base);
+const OVT0='https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/2026-09-23.1/buildings.pmtiles';
+const SATATT='Imagery &copy; <a href="https://www.esri.com/" target="_blank">Esri</a>, Maxar, Earthstar Geographics, GIS User Community';
+let baseMode=localStorage.getItem('signscout_base')==='sat'?'sat':'std',stStd=null,stSat=null;
+async function ovtUrl(){try{const c=JSON.parse(localStorage.getItem('signscout_ovt')||'null');if(c&&Date.now()-c.t<3*864e5)return c.u}catch(e){}
+ try{const ac=new AbortController();setTimeout(()=>ac.abort(),2500);const x=await (await fetch('https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/?list-type=2&prefix=tiles/&delimiter=/',{signal:ac.signal})).text();
+  const ps=[...x.matchAll(/<Prefix>tiles\/(\d{4}-\d\d-\d\d[^<\/]*)\/<\/Prefix>/g)].map(m=>m[1]).sort().reverse();
+  for(const p of ps.slice(0,3)){const u='https://overturemaps-extras-us-west-2.s3.us-west-2.amazonaws.com/tiles/'+p+'/buildings.pmtiles';const r=await fetch(u,{method:'HEAD',signal:ac.signal});if(r.ok){localStorage.setItem('signscout_ovt',JSON.stringify({u,t:Date.now()}));return u}}}catch(e){}
+ return OVT0}
+function addOvt(st,u){const i=st.layers.findIndex(l=>l.id==='building');if(i<0||!window.pmtiles)return st;
+ st.sources.ovt={type:'vector',url:'pmtiles://'+u,attribution:'&copy; <a href="https://docs.overturemaps.org/attribution" target="_blank">Overture Maps Foundation</a>'};
+ st.layers.splice(i,0,{id:'building-ovt',type:'fill',source:'ovt','source-layer':'building',minzoom:13,paint:{'fill-color':NIGHT.building,'fill-outline-color':'#46586a','fill-opacity':.9}});
+ st.layers.forEach(l=>{if(l.id==='building')l.minzoom=13});return st}
+function satStyle(st){const s2=JSON.parse(JSON.stringify(st));s2.sources.esri={type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:19,attribution:SATATT};
+ s2.layers.forEach(l=>{l.layout=l.layout||{};if(l.type==='fill'||l.type==='background'||l.type==='fill-extrusion'||l.type==='raster'||l.type==='hillshade')l.layout.visibility='none';
+  else if(l.type==='line'){if(/^(highway|road|bridge|tunnel)/.test(l.id)&&!/casing/.test(l.id)){l.paint['line-color']='#ffffff';l.paint['line-opacity']=.38}else if(/casing|waterway|railway|aeroway/.test(l.id))l.layout.visibility='none'}
+  else if(l.type==='symbol'&&l.paint){l.paint['text-halo-color']='rgba(0,0,0,.85)';l.paint['text-halo-width']=1.4}});
+ s2.layers.unshift({id:'esri-sat',type:'raster',source:'esri',paint:{'raster-fade-duration':150}});return s2}
+async function setBase(){if(base)map.removeLayer(base);
  if(!(window.L&&L.maplibreGL&&window.maplibregl))return osmFallback();
- fetch('https://tiles.openfreemap.org/styles/dark').then(r=>r.json()).then(st=>{base=L.maplibreGL({style:night(st),attribution:ATT}).addTo(map)}).catch(osmFallback)}
+ try{if(window.pmtiles&&!window.__pmp){window.__pmp=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',window.__pmp.tile)}
+  const [st,u]=await Promise.all([fetch('https://tiles.openfreemap.org/styles/dark').then(r=>r.json()),ovtUrl()]);
+  stStd=addOvt(night(st),u);stSat=satStyle(stStd);base=L.maplibreGL({style:baseMode==='sat'?stSat:stStd,attribution:ATT+(baseMode==='sat'?' | '+SATATT:''),maxZoom:21}).addTo(map);updLay()}catch(e){osmFallback()}}
+function setBaseMode(m){if(m===baseMode)return closeLay();baseMode=m;localStorage.setItem('signscout_base',m);
+ if(base&&base.getMaplibreMap&&stStd){base.getMaplibreMap().setStyle(m==='sat'?stSat:stStd);map.attributionControl.removeAttribution(m==='sat'?ATT:ATT+' | '+SATATT);map.attributionControl.addAttribution(m==='sat'?ATT+' | '+SATATT:ATT)}
+ updLay();closeLay();toast(m==='sat'?'Satellite view':'Map view')}
+function updLay(){const a=$('bStd'),b=$('bSat'),c=$('bInc');if(!a)return;a.classList.toggle('on',baseMode!=='sat');b.classList.toggle('on',baseMode==='sat');c.classList.toggle('on',!!(typeof incOn!=='undefined'&&incOn))}
+function openLay(){const m=$('laym');if(m.classList.contains('on'))return closeLay();updLay();m.classList.add('on')}
+function closeLay(){$('laym').classList.remove('on')}
+document.addEventListener('pointerdown',e=>{const m=$('laym');if(m&&m.classList.contains('on')&&!m.contains(e.target)&&!$('lbtn').contains(e.target))closeLay()},true);
 setBase();
 
 const layer=L.layerGroup().addTo(map);let me=null,lastPos=null,first=true,viewing=null;
