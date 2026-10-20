@@ -208,9 +208,9 @@ function addOvt(st,u){const i=st.layers.findIndex(l=>l.id==='building');if(i<0||
  st.layers.forEach(l=>{if(l.id==='building')l.minzoom=13});return st}
 function satStyle(st){const s2=JSON.parse(JSON.stringify(st));s2.sources.esri={type:'raster',tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],tileSize:256,maxzoom:19,attribution:SATATT};
  s2.layers.forEach(l=>{l.layout=l.layout||{};if(l.type==='fill'||l.type==='background'||l.type==='fill-extrusion'||l.type==='raster'||l.type==='hillshade')l.layout.visibility='none';
-  else if(l.type==='line'){if(/^(highway|road|bridge|tunnel)/.test(l.id)&&!/casing/.test(l.id)){l.paint['line-color']='#ffffff';l.paint['line-opacity']=.38}else if(/casing|waterway|railway|aeroway/.test(l.id))l.layout.visibility='none'}
+  else if(l.type==='line'){if(/^(highway|road|bridge|tunnel)/.test(l.id)&&!/casing/.test(l.id)){l.paint['line-color']='#ffffff';l.paint['line-opacity']=.22}else if(/casing|waterway|railway|aeroway/.test(l.id))l.layout.visibility='none'}
   else if(l.type==='symbol'&&l.paint){l.paint['text-halo-color']='rgba(0,0,0,.85)';l.paint['text-halo-width']=1.4}});
- s2.layers.unshift({id:'esri-sat',type:'raster',source:'esri',paint:{'raster-fade-duration':150}});return s2}
+ s2.layers.unshift({id:'esri-sat',type:'raster',source:'esri',paint:{'raster-fade-duration':150,'raster-saturation':.15,'raster-contrast':.1,'raster-brightness-min':0,'raster-brightness-max':1,'raster-hue-rotate':0}});return s2}
 async function setBase(){if(base)map.removeLayer(base);
  if(!(window.L&&L.maplibreGL&&window.maplibregl))return osmFallback();
  try{if(window.pmtiles&&!window.__pmp){window.__pmp=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',window.__pmp.tile)}
