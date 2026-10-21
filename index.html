@@ -5,7 +5,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Sign Scout">
 <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="apple-touch-icon.png?v=2"><link rel="icon" href="icon-192.png?v=2">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script><script src="https://unpkg.com/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
 <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"><script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script><script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.0.22/leaflet-maplibre-gl.js"></script><script src="https://unpkg.com/pmtiles@4.3.0/dist/pmtiles.js"></script>
 <style>
 :root{--g:#27B94B;--g2:#27B94B;--b:#0A84FF;--glass:rgba(18,50,47,.8);--line:rgba(255,255,255,.1);--t:#f5f5f7;--m:#98989f;--st:env(safe-area-inset-top);--sb:env(safe-area-inset-bottom)}
@@ -159,13 +159,14 @@ body.paused #pauseb,body.paused #stopb{opacity:1!important;filter:none!important
 body.placing #addb{color:#27B94B}
 .rw{position:relative;margin-bottom:10px;border-radius:18px;overflow:hidden}.rw>.ri{margin-bottom:0;position:relative;z-index:1;touch-action:pan-y;transition:transform .22s ease;background:linear-gradient(rgba(255,255,255,.04),rgba(255,255,255,.04)),#14322f}
 .rw .rdel{position:absolute;inset:0;border-radius:18px;background:#b3261e;color:#fff;display:none;align-items:center;justify-content:flex-end;gap:6px;padding-right:22px;font-size:13px;font-weight:700;pointer-events:none;transition:background .15s}.rw .rdel svg{width:22px;height:22px}.rw.sw .rdel,.rw .ri[style*=translate]~.rdel{display:flex}.rw.arm .rdel{background:#ff3b30}
+#side{position:absolute}#cmpb{position:absolute;right:0;bottom:calc(100% + 10px);display:none}#cmpb.on{display:grid}#cmpb svg{transition:transform .1s linear}
 </style></head><body>
 <div id="pzdim" aria-hidden="true"></div><div id="map"></div>
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
 <div class="row" style="gap:8px"><button class="ib" onclick="openLog()" aria-label="Route log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
 <button class="ib" onclick="undo()" aria-label="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button></div></div>
 <div class="chips"><div class="chip g"><b id="sNow">0</b><span>This route</span></div><div class="chip"><b id="sPast">0</b><span>Past signs</span></div><div class="chip"><b id="sDur">0m</b><span>Duration</span></div></div></div>
-<div id="spd" class="glass"><b>--</b><span>mph</span></div><div id="side"><button id="addb" class="ib glass" onclick="startAdd()" aria-label="Add sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="10" rx="2"/><path d="M12 13.5V21"/><path d="M12 6.2v5M9.5 8.7h5"/></svg></button><div style="position:relative;display:flex"><div id="laym" class="glass"><div class="lseg"><button id="bStd" onclick="setBaseMode('std')">Map</button><button id="bSat" onclick="setBaseMode('sat')">Satellite</button></div><button id="bInc" class="lrow" onclick="toggleIncome();updLay();closeLay()">Income layer</button></div><button id="lbtn" class="ib glass" onclick="openLay()" aria-label="Income layer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5" opacity=".6"/></svg></button></div><button id="cbtn" class="ib glass" onclick="toggleCust()" aria-label="Customers layer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.6" r="4.1"/><path d="M3.8 20.2c0-4.2 3.7-7.1 8.2-7.1s8.2 2.9 8.2 7.1c0 .6-.4 1-1 1H4.8c-.6 0-1-.4-1-1z"/></svg></button><button id="fbtn" class="ib glass" onclick="recenter()" aria-label="Follow me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+<div id="spd" class="glass"><b>--</b><span>mph</span></div><div id="side"><button id="cmpb" class="ib glass" onclick="resetNorth()" aria-label="Reset north"><svg viewBox="0 0 24 24"><path d="M12 3.2l3.6 8.8H8.4z" fill="#ff453a"/><path d="M12 20.8L8.4 12h7.2z" fill="currentColor" opacity=".85"/><circle cx="12" cy="12" r="1.3" fill="#fff"/></svg></button><button id="addb" class="ib glass" onclick="startAdd()" aria-label="Add sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="10" rx="2"/><path d="M12 13.5V21"/><path d="M12 6.2v5M9.5 8.7h5"/></svg></button><div style="position:relative;display:flex"><div id="laym" class="glass"><div class="lseg"><button id="bStd" onclick="setBaseMode('std')">Map</button><button id="bSat" onclick="setBaseMode('sat')">Satellite</button></div><button id="bInc" class="lrow" onclick="toggleIncome();updLay();closeLay()">Income layer</button></div><button id="lbtn" class="ib glass" onclick="openLay()" aria-label="Income layer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5" opacity=".6"/></svg></button></div><button id="cbtn" class="ib glass" onclick="toggleCust()" aria-label="Customers layer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.6" r="4.1"/><path d="M3.8 20.2c0-4.2 3.7-7.1 8.2-7.1s8.2 2.9 8.2 7.1c0 .6-.4 1-1 1H4.8c-.6 0-1-.4-1-1z"/></svg></button><button id="fbtn" class="ib glass" onclick="recenter()" aria-label="Follow me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
 </div>
 <div id="dropwrap"><div id="plbar" class="glass"><div id="plt"></div><div class="plb"><button class="no" onclick="exitPlace()">Cancel</button><button class="yes" id="plok" onclick="placeOk()">Place sign</button></div></div><button id="startb" onclick="startFlow()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>Start Route</button><button id="pauseb" onclick="togglePause()" aria-label="Pause route"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="3.8" height="14" rx="1.4"/><rect x="13.7" y="5" width="3.8" height="14" rx="1.4"/></svg></button><button id="drop" onclick="drop()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0119 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Drop Sign</button><button id="stopb" onclick="stopRoute()" aria-label="Stop route"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4.7" y="4.7" width="14.6" height="14.6" rx="3.6"/></svg></button></div>
 <div id="view" class="glass"><div class="row"><div><b id="vtitle"></b><div style="color:var(--m);font-size:12px" id="vsub"></div></div><button class="back" onclick="exitView()">Back to Live</button></div><div id="vroute"></div><div id="vlist"></div></div>
@@ -193,7 +194,7 @@ function AD(r){const T=RT(r);return Math.max(0,((T.en||Date.now())-T.st)-pausedM
 function hm(ms){const m=Math.max(0,Math.floor(ms/60000));return m<60?m+'m':Math.floor(m/60)+'h '+(m%60)+'m'}
 (function migrate(){const c=cur();db.routes.forEach(r=>{if(r.id!==db.current&&!r.status)r.status='stopped'});
  if(c){if(c.status==='stopped'){db.current=null}else if(c.pins.length||localStorage.getItem('signscout_team')){c.status='active';c.start=c.start||(c.pins[0]&&c.pins[0].t)||c.id}else{db.routes=db.routes.filter(r=>r!==c);db.current=null}}else db.current=null;save()})();
-const map=L.map('map',{zoomControl:false,doubleClickZoom:false}).setView([39.8,-98.6],4);function zsc(){const z=map.getZoom(),c=map.getContainer().classList;c.toggle('zs1',z<=13&&z>12);c.toggle('zs2',z<=12)}map.on('zoomend',zsc);zsc();
+const map=L.map('map',{zoomControl:false,doubleClickZoom:false,rotate:true,touchRotate:true,rotateControl:false,shiftKeyRotate:false,bearing:0}).setView([39.8,-98.6],4);function zsc(){const z=map.getZoom(),c=map.getContainer().classList;c.toggle('zs1',z<=13&&z>12);c.toggle('zs2',z<=12)}map.on('zoomend',zsc);zsc();
 const darkQ=matchMedia('(prefers-color-scheme: dark)');const ATT='<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';let base=null;
 const NIGHT={background:'#225253',water:'#1f3fa8',waterway:'#1f3fa8',landcover_ice_shelf:'#2a5f5c',landcover_glacier:'#2a5f5c',landuse_residential:'#3a4659',landcover_wood:'#1e4b4c',landuse_park:'#2a5d55',building:'#55687a','aeroway-area':'#3a4659','aeroway-taxiway':'#8a909c','aeroway-runway':'#8a909c','aeroway-runway-casing':'#2a3340',road_area_pier:'#3a4659',road_pier:'#8a909c',highway_path:'#46505f',highway_minor:'#8a909c',highway_major_casing:'#26303c',highway_major_inner:'#9aa0ab',highway_major_subtle:'#8a909c',highway_motorway_casing:'#26303c',highway_motorway_inner:'#a8a7a4',highway_motorway_subtle:'#a39f98',railway_transit:'#4a5568',railway_minor:'#4a5568',railway:'#4f5a6c',railway_transit_dashline:'#3a4659',railway_minor_dashline:'#3a4659',railway_dashline:'#3a4659',boundary_state:'#6b8a8a','boundary_country_z0-4':'#7a9a9a','boundary_country_z5-':'#7a9a9a'};
 function night(st){st.layers.forEach(l=>{const p=l.paint=l.paint||{};const c=NIGHT[l.id];
@@ -217,11 +218,21 @@ function satStyle(st){const s2=JSON.parse(JSON.stringify(st));s2.sources.esri={t
   else if(l.type==='line'){if(/^(highway|road|bridge|tunnel)/.test(l.id)&&!/casing/.test(l.id)){l.paint['line-color']='#ffffff';l.paint['line-opacity']=.22}else if(/casing|waterway|railway|aeroway/.test(l.id))l.layout.visibility='none'}
   else if(l.type==='symbol'&&l.paint){l.paint['text-halo-color']='rgba(0,0,0,.85)';l.paint['text-halo-width']=1.4}});
  s2.layers.unshift({id:'esri-sat',type:'raster',source:'esri',paint:{'raster-fade-duration':150,'raster-saturation':.15,'raster-contrast':.1,'raster-brightness-min':0,'raster-brightness-max':1,'raster-hue-rotate':0}});return s2}
+function rotGL(ly){const P=.1;
+ ly.getSize=function(){const s=this._map.getSize(),b=(this._map.getBearing?this._map.getBearing():0)*Math.PI/180,c=Math.abs(Math.cos(b)),n=Math.abs(Math.sin(b));return L.point(s.x*c+s.y*n,s.x*n+s.y*c).multiplyBy(1+2*P)._round()};
+ ly._tl=function(){const m=this._map,h=m.getSize().divideBy(2);return m.containerPointToLayerPoint(h).subtract(this.getSize().divideBy(2))};
+ ly._initContainer=function(){const c=this._container=L.DomUtil.create('div','leaflet-gl-layer'),z=this.getSize();c.style.width=z.x+'px';c.style.height=z.y+'px';L.DomUtil.setPosition(c,this._roundPoint(this._tl()))};
+ ly._update=function(){if(!this._map)return;this._offset=this._map.containerPointToLayerPoint([0,0]);if(this._zooming)return;const z=this.getSize(),c=this._container,gl=this._glMap;
+  L.DomUtil.setPosition(c,this._roundPoint(this._tl()));this._transformGL(gl);if(gl.transform.width!==z.x||gl.transform.height!==z.y){c.style.width=z.x+'px';c.style.height=z.y+'px';gl._resize?gl._resize():gl.resize()}else{gl._update?gl._update():gl.update()}};
+ ly._animateZoom=function(e){const m=this._map,sc=m.getZoomScale(e.zoom),pad=this.getSize().subtract(m.getSize()).divideBy(2).multiplyBy(sc),vh=this.getSize()._divideBy(2);
+  const tl=m.project(e.center,e.zoom)._subtract(vh)._add(m._getMapPanePos().add(pad))._round(),off=m.project(m.getBounds().getNorthWest(),e.zoom)._subtract(tl);L.DomUtil.setTransform(this._glMap._actualCanvas,off.subtract(this._offset),sc)};
+ return ly}
+map.on('rotate',()=>{if(base&&base._glMap&&base._update)base._update()});
 async function setBase(){if(base)map.removeLayer(base);
  if(!(window.L&&L.maplibreGL&&window.maplibregl))return osmFallback();
  try{if(window.pmtiles&&!window.__pmp){window.__pmp=new pmtiles.Protocol();maplibregl.addProtocol('pmtiles',window.__pmp.tile)}
   const [st,u]=await Promise.all([fetch('https://tiles.openfreemap.org/styles/dark').then(r=>r.json()),ovtUrl()]);
-  stStd=addOvt(night(st),u);stSat=satStyle(stStd);base=L.maplibreGL({style:baseMode==='sat'?stSat:stStd,attribution:ATT+(baseMode==='sat'?' | '+SATATT:''),maxZoom:21}).addTo(map);updLay()}catch(e){osmFallback()}}
+  stStd=addOvt(night(st),u);stSat=satStyle(stStd);base=rotGL(L.maplibreGL({style:baseMode==='sat'?stSat:stStd,attribution:ATT+(baseMode==='sat'?' | '+SATATT:''),maxZoom:21})).addTo(map);updLay()}catch(e){osmFallback()}}
 function setBaseMode(m){if(m===baseMode)return closeLay();baseMode=m;localStorage.setItem('signscout_base',m);
  if(base&&base.getMaplibreMap&&stStd){base.getMaplibreMap().setStyle(m==='sat'?stSat:stStd);map.attributionControl.removeAttribution(m==='sat'?ATT:ATT+' | '+SATATT);map.attributionControl.addAttribution(m==='sat'?ATT+' | '+SATATT:ATT)}
  updLay();closeLay();toast(m==='sat'?'Satellite view':'Map view')}
@@ -263,7 +274,7 @@ function ask(t,p,yes){return new Promise(res=>{$('mt').textContent=t;$('mp').tex
  const done=v=>{$('modal').classList.remove('on');res(v)};$('myes').onclick=()=>done(true);$('mno').onclick=()=>done(false)})}
 function ripple(){const r=document.createElement('div');r.className='ring';$('drop').appendChild(r);setTimeout(()=>r.remove(),800)}
 function addPin(lat,lng,acc){const c=cur();c.pins.push({lat,lng,acc,t:Date.now()});save();render(true);ripple();const near=allFlags().find(f=>f.p!==c.pins[c.pins.length-1]&&dist(lat,lng,f.p.lat,f.p.lng)<50);toast(near?'⚠ Sign #'+c.pins.length+' dropped near a complaint spot!':'📍 Sign #'+c.pins.length+' dropped');if(navigator.vibrate)navigator.vibrate([40,30,60])}
-async function drop(){if(!navigator.geolocation)return toast('No GPS available');
+async function drop(){dropAt=Date.now();if(!navigator.geolocation)return toast('No GPS available');
  if(!cur()){if(!await ask('Start a route first?','You need an active route to drop signs.','Start & Drop'))return;startRoute();render();setMode()}
  if(isPaused(cur())){if(!await ask('Resume route?','This route is paused. Resume it and drop the sign?','Resume & Drop'))return;togglePause()}
  if(lastPos&&Date.now()-lastPos.t<5000)return addPin(lastPos.lat,lastPos.lng,lastPos.acc);
@@ -339,7 +350,7 @@ function binIdx(v){return v==null?-1:BINS.findIndex(b=>v<b.max)}
 function applyBins(){localStorage.setItem('signscout_income_bins',JSON.stringify(binOn));drawLegend();incLayer.setStyle(incStyle);incLayer.eachLayer(l=>{const i=binIdx(l.feature.properties.inc),vis=i<0||binOn[i];const el=l.getElement&&l.getElement();if(el)el.style.pointerEvents=vis?'':'none';if(!vis)l.closePopup()})}
 function toggleBin(i){binOn[i]=!binOn[i];applyBins()}function setAllBins(v){binOn=BINS.map(()=>v);applyBins()}
 const incColor=v=>v==null?null:BINS.find(b=>v<b.max).c;
-map.createPane('incomePane');map.getPane('incomePane').style.zIndex=380;
+map.createPane('incomePane',map._rotatePane||undefined);map.getPane('incomePane').style.zIndex=380;
 function incStyle(f){const v=f.properties.inc,c=incColor(v),i=binIdx(v);if(i>=0&&!binOn[i])return{opacity:0,fillOpacity:0};return c?{color:'rgba(255,255,255,.22)',weight:.4,fillColor:c,fillOpacity:.6}:{color:'rgba(255,255,255,.35)',weight:.6,dashArray:'3 3',fillOpacity:0}}
 const incLayer=L.geoJSON(null,{pane:'incomePane',style:incStyle,
  onEachFeature:(f,l)=>{l.on('add',()=>{const i=binIdx(f.properties.inc),el=l.getElement&&l.getElement();if(el&&i>=0&&!binOn[i])el.style.pointerEvents='none'});const p=f.properties,v=p.inc,m=p.moe;l.bindPopup('<div class="pp"><b>'+esc(p.NAME)+'</b><div class="m">'+esc(p.cname||'')+'</div><div style="font-size:18px;font-weight:800;margin-top:4px">'+(v==null?'No data':'$'+Math.round(v).toLocaleString())+'</div><div class="m">Median household income'+(m!=null&&v!=null?' · ±$'+Math.round(m).toLocaleString():'')+'</div><div class="m">'+esc(incRel)+'</div></div>')}});
@@ -357,7 +368,7 @@ async function loadIncome(){if(!incOn)return;if(map.getZoom()<11){incStatus('· 
 function setIncome(on){incOn=on;localStorage.setItem('signscout_income',on?'1':'0');$('lbtn').classList.toggle('on',on);showLeg();if(on){incLayer.addTo(map);loadIncome()}else map.removeLayer(incLayer)}
 function toggleIncome(){setIncome(!incOn);toast(incOn?'Income layer on':'Income layer off')}
 map.on('moveend',()=>{clearTimeout(incT);incT=setTimeout(loadIncome,400)});
-const CKEY='signscout_customers';map.createPane('custPane');map.getPane('custPane').style.zIndex=450;
+const CKEY='signscout_customers';map.createPane('custPane',map._rotatePane||undefined);map.getPane('custPane').style.zIndex=450;
 const custLayer=L.layerGroup();let custOn=localStorage.getItem('signscout_cust_on')==='1';
 let custMem=null,custUpd=null;function custData(){return custMem}
 const PKEY='signscout_cust_pass',EKEY='signscout_cust_enc';
@@ -399,13 +410,14 @@ const pts=render();setMode();if(pts.length)map.fitBounds(pts,{padding:[60,60],ma
 let follow=false,heading=null,compass=null,prevFix=null,anim=null,shown=null,accC=null,progPan=false;
 const ARROW='<div class="navw"><div class="cone"></div><div class="nav"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17" fill="#0A84FF" stroke="#fff" stroke-width="3.5"/><path d="M20 10 L27.5 28 L20 24 L12.5 28 Z" fill="#fff"/></svg></div></div>';
 function brg(a,b){const r=Math.PI/180,y=Math.sin((b.lng-a.lng)*r)*Math.cos(b.lat*r),x=Math.cos(a.lat*r)*Math.sin(b.lat*r)-Math.sin(a.lat*r)*Math.cos(b.lat*r)*Math.cos((b.lng-a.lng)*r);return(Math.atan2(y,x)/r+360)%360}
-let rot=0;function setRot(h){if(h==null||isNaN(h))return;let d=((h-rot)%360+540)%360-180;rot+=d;const el=me&&me.getElement();if(el){const a=el.querySelector('.nav');if(a)a.style.transform='rotate('+rot+'deg)';const cn=el.querySelector('.cone');if(cn)cn.style.transform='rotate('+rot+'deg)'}}
+let rot=0;function setRot(h){if(h==null||isNaN(h))return;let d=((h-rot)%360+540)%360-180;rot+=d;drawRot()}
+function drawRot(){const b=map.getBearing?map.getBearing():0,v=rot+b,el=me&&me.getElement();if(el){const a=el.querySelector('.nav');if(a)a.style.transform='rotate('+v+'deg)';const cn=el.querySelector('.cone');if(cn)cn.style.transform='rotate('+v+'deg)'}}
 function moveTo(ll){if(!shown){shown=ll;me.setLatLng(ll);return}cancelAnimationFrame(anim);const from=shown,t0=performance.now(),D=900;
  const step=t=>{const k=Math.min(1,(t-t0)/D),e=k<.5?2*k*k:1-Math.pow(-2*k+2,2)/2;shown=[from[0]+(ll[0]-from[0])*e,from[1]+(ll[1]-from[1])*e];me.setLatLng(shown);accC&&accC.setLatLng(shown);
   if(follow&&!viewing){progPan=true;map.panTo(shown,{animate:false});progPan=false}if(k<1)anim=requestAnimationFrame(step)};anim=requestAnimationFrame(step)}
-function setFollow(on){follow=on;$('fbtn').classList.toggle('on',on);if(on&&lastPos){progPan=true;map.setView([lastPos.lat,lastPos.lng],Math.max(map.getZoom(),17));progPan=false}}
+function setFollow(on){follow=on;$('fbtn').classList.toggle('on',on);if(on&&lastPos){progPan=true;map.setView([lastPos.lat,lastPos.lng],16);progPan=false}}
 function recenter(){if(!lastPos)return toast('Waiting for GPS…');askCompass();setFollow(!follow);toast(follow?'Follow mode on':'Follow mode off')}
-map.on('dragstart',()=>{if(follow&&!progPan){setFollow(false);toast('Follow mode off')}});
+let dragP0=null,dropAt=0;map.on('dragstart',()=>{dragP0=map.getPixelOrigin?map.getPixelBounds().getCenter():null});map.on('drag',()=>{if(!follow||progPan||Date.now()-dropAt<1200||!dragP0)return;const c=map.getPixelBounds().getCenter();if(Math.hypot(c.x-dragP0.x,c.y-dragP0.y)>24){dragP0=null;setFollow(false);toast('Follow mode off')}});
 function onFix(p){const c=p.coords,ll=[c.latitude,c.longitude],now=Date.now();const cur2={lat:ll[0],lng:ll[1]};
  lastPos={lat:ll[0],lng:ll[1],acc:c.accuracy,t:now};
  if(!me){me=L.marker(ll,{icon:L.divIcon({className:'',html:ARROW,iconSize:[110,110],iconAnchor:[55,55]}),zIndexOffset:2000,interactive:false}).addTo(map);
@@ -426,6 +438,11 @@ let wl=null;async function wake(){try{if('wakeLock' in navigator&&document.visib
 wake();document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wake()});
 if(navigator.geolocation)navigator.geolocation.watchPosition(onFix,e=>{if(e.code===1)toast('Location permission denied')},{enableHighAccuracy:true,maximumAge:0,timeout:20000});
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script>
+<script>
+function resetNorth(){if(map.setBearing){map.setBearing(0);updCmp()}}
+function updCmp(){const b=map.getBearing?map.getBearing():0,on=Math.abs(((b%360)+360)%360)>0.5&&Math.abs(((b%360)+360)%360-360)>0.5;const e=$('cmpb');e.classList.toggle('on',on);e.firstChild.style.transform='rotate('+b+'deg)';drawRot()}
+map.on('rotate',updCmp);updCmp();
 </script>
 <script>
 const TRASH='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M9.5 7V4.8c0-.4.4-.8.8-.8h3.4c.4 0 .8.4.8.8V7M6.5 7l.9 12.2c.1.8.7 1.3 1.5 1.3h6.2c.8 0 1.4-.5 1.5-1.3L17.5 7M10 11v6M14 11v6"/></svg>';
