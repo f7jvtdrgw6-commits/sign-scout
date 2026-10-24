@@ -543,4 +543,35 @@ function copyJoin(){const u=location.origin+location.pathname+'?team='+encodeURI
  if(!team||team!==c.trim())setTimeout(()=>openTeam(c.trim()),600)}
  updTeam();if(team){syncDiff();sTick(true)}})();
 </script>
+<script>
+/* Live customer pins: Supabase customer_pins (anon read) + Realtime. customers.enc.json stays the base and offline fallback. */
+const LP_URL='https://fnrclgoqmbpxncyowmkr.supabase.co',LP_KEY='sb_publishable_wWARxD5Whk-baL1-Du5Hrw_p2HcLzKy',LPK='signscout_cust_live';
+let lpRows={},lpKeys={},lpWS=null,lpHB=null,lpBack=1000,lpT=null,lpOn=false,lpUpd=null;
+const lpNorm=a=>String(a||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+function lpKey(salt,iter){const pass=localStorage.getItem(PKEY),k=salt+'|'+iter;
+ return lpKeys[k]||(lpKeys[k]=crypto.subtle.importKey('raw',new TextEncoder().encode(pass),'PBKDF2',false,['deriveKey']).then(km=>crypto.subtle.deriveKey({name:'PBKDF2',salt:b64(salt),iterations:iter,hash:'SHA-256'},km,{name:'AES-GCM',length:256},false,['decrypt'])))}
+async function lpPut(r){if(!r||!r.id)return false;const o=lpRows[r.id];if(o&&new Date(o.u)>new Date(r.updated_at))return false;
+ try{let d={deleted:true};if(!r.deleted){const b=JSON.parse(r.blob),key=await lpKey(b.salt,b.iter);d=JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:b64(b.iv)},key,b64(b.ct))))}
+  lpRows[r.id]=Object.assign(d,{u:r.updated_at,raw:r});if(!lpUpd||new Date(r.updated_at)>new Date(lpUpd))lpUpd=r.updated_at;return true}catch(e){console.warn('live pin decrypt failed',r.id);return false}}
+function lpItems(){const g={};for(const id in lpRows){const p=lpRows[id];if(p.deleted||!p.address)continue;const k=lpNorm(p.address);
+  const e=g[k]||(g[k]={clients:[],address:p.address,lat:null,lng:null,job_count:0,nums:[],sts:[],match_quality:'exact',total:0,live:true});
+  e.job_count++;if(p.client&&!e.clients.includes(p.client))e.clients.push(p.client);if(p.job_number!=null)e.nums.push('#'+String(p.job_number).replace(/^#/,''));
+  if(p.status&&!e.sts.includes(p.status))e.sts.push(p.status);if(e.lat==null&&p.lat!=null){e.lat=p.lat;e.lng=p.lng}if(p.match_quality!=='exact'&&p.match_quality!=='manual')e.match_quality=p.match_quality||'non_exact';e.total+=+p.total||0}
+ return Object.entries(g).map(([k,e])=>Object.assign(e,{job_numbers:e.nums.join(' '),statuses:e.sts.join('; ')}))}
+custData=function(){if(!custMem)return null;const live=lpItems();if(!live.length)return custMem;const ks=new Set(live.map(i=>lpNorm(i.address)));
+ return Object.assign({},custMem,{items:custMem.items.filter(i=>!ks.has(lpNorm(i.address))).concat(live)})};
+function lpRender(){clearTimeout(lpT);lpT=setTimeout(()=>{if(lpUpd&&(!custUpd||new Date(lpUpd)>new Date(custUpd)))custUpd=lpUpd;if(custOn&&custMem){renderCust();updCustInfo()}
+ try{localStorage.setItem(LPK,JSON.stringify(Object.values(lpRows).map(p=>p.raw)))}catch(e){}},250)}
+async function lpFetch(){try{const r=await fetch(LP_URL+'/rest/v1/customer_pins?select=id,blob,updated_at,deleted&limit=10000',{headers:{apikey:LP_KEY},cache:'no-store'});if(!r.ok)throw 0;
+  const rows=await r.json();let ch=false;for(const x of rows)ch=(await lpPut(x))||ch;if(ch)lpRender()}catch(e){}}
+function lpConnect(){if(lpWS)return;let ref=0;const ws=lpWS=new WebSocket(LP_URL.replace('https','wss')+'/realtime/v1/websocket?apikey='+LP_KEY+'&vsn=1.0.0');
+ const send=(topic,event,payload)=>ws.readyState===1&&ws.send(JSON.stringify({topic,event,payload,ref:String(++ref)}));
+ ws.onopen=()=>{lpBack=1000;send('realtime:signscout-pins','phx_join',{config:{postgres_changes:[{event:'*',schema:'public',table:'customer_pins'}]}});lpHB=setInterval(()=>send('phoenix','heartbeat',{}),25000);lpFetch()};
+ ws.onmessage=async m=>{let j;try{j=JSON.parse(m.data)}catch(e){return}if(j.event==='postgres_changes'){const rec=j.payload&&j.payload.data&&j.payload.data.record;if(await lpPut(rec))lpRender()}};
+ ws.onclose=()=>{clearInterval(lpHB);lpWS=null;if(lpOn)setTimeout(lpConnect,lpBack=Math.min(lpBack*2,60000))};ws.onerror=()=>{try{ws.close()}catch(e){}}}
+async function lpStart(){if(lpOn)return;lpOn=true;try{for(const x of JSON.parse(localStorage.getItem(LPK)||'[]'))await lpPut(x)}catch(e){}lpRender();lpConnect()}
+const _lpLoad=loadCustomers;loadCustomers=async function(i){const ok=await _lpLoad(i);if(ok)lpStart();return ok};
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lpOn){if(!lpWS)lpConnect();else lpFetch()}});
+if(custOn)(async()=>{for(let i=0;i<60&&!custMem;i++)await new Promise(r=>setTimeout(r,250));if(custMem)lpStart()})();
+</script>
 </body></html>
