@@ -23,6 +23,7 @@ button{font-family:inherit;touch-action:manipulation;cursor:pointer}
 .ib svg{width:19px;height:19px}
 .chips{display:flex;gap:8px;margin-top:10px}.chip{flex:1;border-radius:14px;padding:8px 10px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
 .chip b{display:block;font-size:17px;font-weight:800;letter-spacing:-.02em}.chip span{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.chips .chip{padding:8px 6px;min-width:0}.chips .chip span{font-size:9.5px;font-weight:700;letter-spacing:.02em;white-space:nowrap;display:block;overflow:hidden;text-overflow:clip}
 .chip.g b{color:var(--g)}
 #side{position:absolute;right:12px;bottom:calc(var(--sb) + 130px);z-index:1000;display:flex;flex-direction:column;gap:10px}
 #side .ib{width:50px;height:50px;border-radius:50%;background:rgba(18,50,47,.8);color:#fff}#spd{background:rgba(18,50,47,.8)!important}
@@ -174,7 +175,7 @@ body.placing #addb{color:#27B94B}
 <div id="top" class="glass"><div class="row"><div class="brand"><div class="logo">S</div><div><h1>Sign Scout</h1><small id="rname"></small></div></div>
 <div class="row" style="gap:8px"><button class="ib" onclick="openLog()" aria-label="Route log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button>
 <button class="ib" onclick="undo()" aria-label="Undo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 010 10h-3"/></svg></button></div></div>
-<div class="chips"><div class="chip g"><b id="sNow">0</b><span>This route</span></div><div class="chip"><b id="sPast">0</b><span>Past signs</span></div><div class="chip"><b id="sDur">0m</b><span>Duration</span></div></div><div id="others"></div></div>
+<div class="chips"><div class="chip g"><b id="sNow">0</b><span>This route</span></div><div class="chip"><b id="sPast">0</b><span>Past signs</span></div><div class="chip"><b id="sDur">0m</b><span>Duration</span></div><div class="chip"><b id="sPace" style="color:#5AC8FA">—</b><span>Per sign</span></div></div><div id="others"></div></div>
 <div id="spd" class="glass"><b>--</b><span>mph</span></div><div id="side"><button id="addb" class="ib glass" onclick="startAdd()" aria-label="Add sign"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3.5" width="16" height="10" rx="2"/><path d="M12 13.5V21"/><path d="M12 6.2v5M9.5 8.7h5"/></svg></button><div style="position:relative;display:flex"><div id="laym" class="glass"><div class="lseg"><button id="bStd" onclick="setBaseMode('std')">Map</button><button id="bSat" onclick="setBaseMode('sat')">Satellite</button></div><button id="bInc" class="lrow" onclick="toggleIncome();updLay();closeLay()">Income layer</button></div><button id="lbtn" class="ib glass" onclick="openLay()" aria-label="Income layer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 12.5l9 5 9-5"/><path d="M3 17l9 5 9-5" opacity=".6"/></svg></button></div><button id="cbtn" class="ib glass" onclick="toggleCust()" aria-label="Customers layer"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="7.6" r="4.1"/><path d="M3.8 20.2c0-4.2 3.7-7.1 8.2-7.1s8.2 2.9 8.2 7.1c0 .6-.4 1-1 1H4.8c-.6 0-1-.4-1-1z"/></svg></button><button id="fbtn" class="ib glass" onclick="recenter()" aria-label="Follow me"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
 </div>
 <div id="dropwrap"><div id="plbar" class="glass"><div id="plt"></div><div class="plb"><button class="no" onclick="exitPlace()">Cancel</button><button class="yes" id="plok" onclick="placeOk()">Place sign</button></div></div><button id="startb" onclick="startFlow()"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l13-7.5z"/></svg>Start Route</button><button id="pauseb" onclick="togglePause()" aria-label="Pause route"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="6.5" y="5" width="3.8" height="14" rx="1.4"/><rect x="13.7" y="5" width="3.8" height="14" rx="1.4"/></svg></button><button id="drop" onclick="drop()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0119 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>Drop Sign</button><button id="stopb" onclick="stopRoute()" aria-label="Stop route"><svg viewBox="0 0 24 24" fill="currentColor"><rect x="4.7" y="4.7" width="14.6" height="14.6" rx="3.6"/></svg></button></div>
@@ -604,5 +605,35 @@ async function lpStart(){if(lpOn)return;lpOn=true;try{for(const x of JSON.parse(
 const _lpLoad=loadCustomers;loadCustomers=async function(i){const ok=await _lpLoad(i);if(ok)lpStart();return ok};
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&lpOn){if(!lpWS)lpConnect();else lpFetch()}});
 if(custOn)(async()=>{for(let i=0;i<60&&!custMem;i++)await new Promise(r=>setTimeout(r,250));if(custMem)lpStart()})();
+</script>
+<script>
+/* v56: per-sign pace + live car dots for other phones */
+(function(){
+const _dur=dur;dur=function(){const r=_dur();try{const c=cur(),e=$('sPace');if(!c||!c.pins.length){e.textContent='—'}else{const sec=Math.round(AD(c)/1000/c.pins.length);e.textContent=Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0')}}catch(x){}return r};
+setInterval(()=>{if(cur())dur()},1000);dur();
+const PZR='__pz',PK='signscout_pzid';let pid=localStorage.getItem(PK);if(!pid){pid='pz_'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);localStorage.setItem(PK,pid)}
+window.pzSelf=pid;const pres={};let sent=null,sentRoute=null,sending=false;
+const _apply=applyRows;applyRows=function(rows){const rest=[];(rows||[]).forEach(x=>{if(x&&x.rid===PZR){if(x.id!==pid&&x.d){const o=pres[x.id];if(!o||+x.u>=o.u)pres[x.id]=Object.assign({u:+x.u},x.d)}}else rest.push(x)});const ch=_apply(rest);setTimeout(drawCars,0);return ch};
+async function pzSend(d){if(!team||sending)return;sending=true;try{await rpc('sync_push',{team_secret:team,rows:[{k:'s',id:pid,rid:PZR,d,del:false,u:Date.now(),dev:(dev||'').slice(0,40)}]});return true}catch(e){return false}finally{sending=false}}
+function pzTick(){if(!team)return;const c=cur(),now=Date.now();
+ if(!c){if(sentRoute!=null){const r=sentRoute;sentRoute=null;sent=null;pzSend({n:dev||'',r:null,t:now})}return}
+ if(!lastPos||lastPos.lat==null)return;const moved=sent?dist(sent.lat,sent.lng,lastPos.lat,lastPos.lng):1e9,el=sent?now-sent.t:1e9;
+ if(sent&&sentRoute===String(c.id)&&!(moved>=30&&el>=3000)&&!(el>=12000&&moved>=5)&&!(el>=60000))return;
+ const d={n:dev||'',r:String(c.id),lat:Math.round(lastPos.lat*1e6)/1e6,lng:Math.round(lastPos.lng*1e6)/1e6,t:now};
+ sent=d;sentRoute=d.r;pzSend(d).then(ok=>{if(ok===false)sent=null})}
+setInterval(()=>{if(document.visibilityState==='visible')pzTick()},3000);
+const cars=L.layerGroup().addTo(map),cm={};
+const CARSVG='<svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M5 11l1.6-4.4A2 2 0 018.5 5h7a2 2 0 011.9 1.6L19 11v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H8v1a1 1 0 01-1 1H6a1 1 0 01-1-1zM7.3 10h9.4l-1-3H8.3zM7.5 14a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4zm9 0a1.2 1.2 0 100-2.4 1.2 1.2 0 000 2.4z"/></svg>';
+function ago(ms){const s=Math.max(0,Math.round(ms/1000));return s<60?s+'s ago':Math.floor(s/60)+'m ago'}
+function carHtml(c,n,a){return '<div class="pzcar" style="position:relative;width:30px;height:30px"><div style="width:30px;height:30px;border-radius:50%;background:'+c+';border:2.5px solid #fff;box-sizing:border-box;box-shadow:0 2px 6px rgba(0,0,0,.6);display:grid;place-items:center">'+CARSVG+'</div><div style="position:absolute;top:32px;left:50%;transform:translateX(-50%);white-space:nowrap;text-align:center;background:rgba(17,22,33,.88);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:2px 7px;font:700 11px/1.25 -apple-system,system-ui,sans-serif;color:#fff">'+esc(n)+'<div class="pza" style="font-weight:500;font-size:9px;color:#aab">updated '+a+'</div></div></div>'}
+function drawCars(){const now=Date.now(),keep={};
+ if(team&&!viewing)for(const id in pres){const p=pres[id];if(id===pid||!p.r||p.lat==null)continue;if(now-(p.t||p.u)>180000)continue;
+  const r=db.routes.find(x=>String(x.id)===p.r);if(!r||r.manual||r.status!=='active'||r.end)continue;
+  const col=rankCol(r)||ROUTE_COLORS[0],nm=p.n||'Another phone',a=ago(now-(p.t||p.u)),sig=col+'|'+nm;keep[id]=1;
+  let m=cm[id];if(!m||m._sig!==sig){if(m)cars.removeLayer(m);m=L.marker([p.lat,p.lng],{zIndexOffset:3000,interactive:false,icon:L.divIcon({className:'',iconSize:[30,30],iconAnchor:[15,15],html:carHtml(col,nm,a)})}).addTo(cars);m._sig=sig;cm[id]=m}
+  else{m.setLatLng([p.lat,p.lng]);const el=m.getElement&&m.getElement();const q=el&&el.querySelector('.pza');if(q)q.textContent='updated '+a}}
+ for(const id in cm)if(!keep[id]){cars.removeLayer(cm[id]);delete cm[id]}}
+window.drawCars=drawCars;window.pzPres=pres;setInterval(drawCars,1000);
+})();
 </script>
 </body></html>
